@@ -31,12 +31,39 @@ pipeline{
 				echo "Skipping test"
 			}
 		}
+
 		stage('Integration Test'){
 			steps {
 				//sh "mvn failsafe:integration-test failsafe:verify"
 				echo "Skipping Integration Test"
 			}
-		}	
+		}
+		
+		stage('Package'){
+			steps{
+				sh "mvn package -DskipTests"
+			}
+		}
+		
+		stage('Build Docker Image'){
+			steps{
+				//"docker build -t ragadocker/currency-exchange-devops:$env.BUILD_TAG"
+				script{
+					dockerImage = docker.build("ragadocker/currency-exchange-devops:${env.BUILD_TAG}");
+				}
+			}
+		}
+		//Make sure youhvae enter in Jenkins the proper credentials
+		stage('Push Docker Image'){
+			steps{
+				script{
+					docker.withRegistry('', 'dockerhub'){
+						dockerImage.push();
+						dockerImage.push('latest');
+					}
+				}
+			}
+		}
 	} 
 
 	post {
